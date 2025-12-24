@@ -27,7 +27,7 @@ button:hover{filter:brightness(1.2);}
 .popup.show .popupBox{transform:scale(1);}
 .popupText{font-size:32px;font-weight:bold;margin-bottom:20px;text-shadow:0 0 15px #00ffe0;}
 input{margin-top:12px;padding:12px;width:100%;border-radius:14px;border:none;outline:none;font-size:16px;background:#111;color:#fff;text-align:center;}
-#submitName{margin-top:18px;background:#00ffe0;color:#000;width:50%;font-weight:bold;font-size:16px;}
+#submitName,#submitLogin{margin-top:18px;background:#00ffe0;color:#000;width:50%;font-weight:bold;font-size:16px;}
 #toast{position:fixed;bottom:20px;background:#111;padding:10px 18px;border-radius:20px;opacity:0;transition:.3s;}
 #premiumTimer,#boostTimer,#potionCountdown{margin-top:6px;font-size:14px;color:#00ffe0;text-shadow:0 0 12px #00ffe0;}
 .secretSpecial {color:#1de9b6;text-shadow:0 0 10px #1de9b6,0 0 20px #1de9b6,0 0 30px #00ffdd;animation:secretPulse 1s infinite alternate;}
@@ -54,11 +54,12 @@ input{margin-top:12px;padding:12px;width:100%;border-radius:14px;border:none;out
  <div class="popupBox">
   <div class="popupText" id="popupText">Harap Masukan Nama Discord Anda</div>
   <input id="usernameInput" placeholder="Nama Discord">
-  <button id="submitName" onclick="submitUsername()">SUBMIT</button>
+  <input id="passwordInput" placeholder="Password (opsional)">
+  <button id="submitLogin" onclick="createOrLoginUser()">SUBMIT</button>
  </div>
 </div>
 
-<div id="modeSelect">
+<div id="modeSelect" style="display:none">
  <div class="popupBox" style="text-align:center;">
   <h2>PROTECTION</h2>
   <div style="font-size:14px;color:#00ffcc;margin-bottom:15px;">SECURE GACHA SYSTEM</div>
@@ -89,6 +90,7 @@ const gift=document.getElementById("gift");
 const popup=document.getElementById("popup");
 const popupText=document.getElementById("popupText");
 const usernameInput=document.getElementById("usernameInput");
+const passwordInput=document.getElementById("passwordInput");
 const toastEl=document.getElementById("toast");
 const limitText=document.getElementById("limitText");
 const adminBtn=document.getElementById("adminBtn");
@@ -109,8 +111,33 @@ const rateAdmin=[{n:"ZONK ⚫",c:"zonk",p:20},{n:"RARE 🔵",c:"rare",p:20},{n:"
 
 // Toast
 function toast(msg){toastEl.textContent=msg;toastEl.style.opacity=1;setTimeout(()=>toastEl.style.opacity=0,1500);}
-function submitUsername(){let u=usernameInput.value.trim();if(!u)return toast("Masukkan nama dulu!");username=u; sessionStorage.setItem("username",username);popup.classList.remove("show");toast("Nama Discord tersimpan: "+username);}
 function prepareGift(){if(!username){popup.classList.add("show");return;} openGift();}
+
+// Create / Login User
+async function createOrLoginUser(){
+    const uname=usernameInput.value.trim();
+    const pw=passwordInput.value.trim()||"default";
+    if(!uname) return toast("Masukkan nama Discord!");
+    
+    // Check existing user
+    const {data,error}=await supabase.from('gacha_users').select('*').eq('device_id',deviceId).single();
+    if(error || !data){
+        // Create new
+        const {error: insertErr}=await supabase.from('gacha_users').insert({
+            device_id:deviceId, username:uname, password:pw, spins_free:3, spins_premium:0, created_at:new Date()
+        });
+        if(insertErr) return toast("Gagal membuat akun!");
+        toast("Akun berhasil dibuat!");
+    } else {
+        // Login
+        if(data.username!==uname || data.password!==pw) return toast("Username / Password salah!");
+        toast("Login berhasil!");
+    }
+    username=uname;
+    sessionStorage.setItem("username",username);
+    popup.classList.remove("show");
+    modeSelect.style.display="flex";
+}
 
 // Roll function
 function roll(){let table=mode==="FREE"?rateFree:mode==="PREMIUM"?ratePremium:rateFree;if(adminAbuse) table=rateAdmin;if(potionActive){table=table.map(i=>i.c==="secret"||i.c==="mythic"?{...i,p:i.p*3}:i);let total=table.reduce((a,b)=>a+b.p,0);table=table.map(i=>({...i,p:(i.p/total)*100}));}let r=Math.random()*100,t=0;for(let i of table){t+=i.p;if(r<=t) return i;}}
@@ -142,7 +169,7 @@ supabase.from('global_status').on('UPDATE',payload=>{const status = payload.new;
 
 function update(){limitText.textContent=(mode||"MODE")+" | SISA GACHA: "+(gachaLimit===Infinity?"∞":gachaLimit);gift.classList.toggle("disabled",gachaLimit<=0 && gachaLimit!==Infinity);adminBtn.classList.toggle("active",adminAbuse);boostBtn.disabled=!adminAbuse;boostBtn.style.opacity=adminAbuse?1:0.4;}
 
-if(username) popup.classList.remove("show");
+if(!username) popup.classList.add("show");
 update();
 </script>
 </body>
