@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DHAFIZ777-GACHA PREMIUM</title>
+<title>DHAFIZ777-GACHA VIP</title>
 <style>
 body{margin:0;height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;font-family:Arial,sans-serif;color:#fff;background:radial-gradient(circle at top,#1b0033,#000);overflow:hidden;}
 h1{margin-bottom:6px;font-size:38px;text-shadow:0 0 25px #00ffe0;} 
@@ -36,14 +36,18 @@ input{margin-top:12px;padding:12px;width:100%;border-radius:14px;border:none;out
 </style>
 </head>
 <body>
-<h1>🎁 DHAFIZ777-GACHA</h1>
+<h1>🎁 DHAFIZ777-GACHA VIP</h1>
 <div id="limitText"></div>
 <div id="premiumTimer"></div>
 <div id="boostTimer"></div>
 <div id="potionCountdown"></div>
 <div id="gift" onclick="prepareGift()">🎁</div>
+
 <div class="controls">
  <button id="adminBtn" class="admin" onclick="toggleAdmin()">ADMIN ABUSE ❌</button>
+ <button class="admin" onclick="addVipPassword()">Tambah Password VIP</button>
+ <button class="admin" onclick="addGiftsToAll(1)">Tambah Kado Semua</button>
+ <button id="boostBtn" class="admin" onclick="startPotionAdmin()">🧪 POTION ADMIN</button>
 </div>
 
 <div id="popup" class="popup">
@@ -66,25 +70,21 @@ input{margin-top:12px;padding:12px;width:100%;border-radius:14px;border:none;out
  </div>
 </div>
 
-<div class="controls">
- <button id="boostBtn" class="modePremium" onclick="startPotionAdmin()">🧪 POTION ADMIN</button>
-</div>
-
 <div id="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 <script>
-// Fix "Supabase already declared" dengan window global
+// Supabase setup
 if (!window.supabaseClient) {
   window.supabaseClient = supabase.createClient(
-    "https://gacha-xyz.supabase.co",  
+    "https://gacha-xyz.supabase.co",
     "sb_publishable_rBYeUnQhRrkGCM9OPq3jSA_nPL_zX5q"
   );
 }
 var supabase = window.supabaseClient;
 
+// Variables
 const WEBHOOK="https://discord.com/api/webhooks/1450407026332270714/YUCosS--Bjud-m8oX_j84L8R44fGXHB_LHnf_0qAT48Pa99J_xbKDuDSwI83kLUlauit";
-
 const gift=document.getElementById("gift");
 const popup=document.getElementById("popup");
 const popupText=document.getElementById("popupText");
@@ -92,12 +92,9 @@ const usernameInput=document.getElementById("usernameInput");
 const toastEl=document.getElementById("toast");
 const limitText=document.getElementById("limitText");
 const adminBtn=document.getElementById("adminBtn");
-const premiumTimer=document.getElementById("premiumTimer");
-const boostTimer=document.getElementById("boostTimer");
-const potionCountdown=document.getElementById("potionCountdown");
+const boostBtn=document.getElementById("boostBtn");
 const modeSelect=document.getElementById("modeSelect");
 const premiumKey=document.getElementById("premiumKey");
-const boostBtn=document.getElementById("boostBtn");
 
 let username=sessionStorage.getItem("username")||"";
 let mode=null,gachaLimit=0,adminAbuse=false,opening=false,lastSpin=0;
@@ -132,7 +129,13 @@ function sendDiscord(result,modeType){const colorMap={"ZONK ⚫":0x777777,"RARE 
 
 // Mode select
 function selectFree(){mode="FREE";gachaLimit=3;modeSelect.style.display="none";update();}
-function selectPremium(){const key=premiumKey.value.trim();if(key!=="davz1231" && key!=="davznew") return toast("Key salah");mode="PREMIUM";gachaLimit=key==="davz1231"?3:Infinity;modeSelect.style.display="none";update();}
+async function selectPremium(){const key=premiumKey.value.trim();if(!key) return toast("Masukkan key");const {data}=await supabase.from('vip_passwords').select('spins_allowed').eq('password',key).single();if(!data) return toast("Key VIP salah");mode="PREMIUM";gachaLimit=data.spins_allowed;modeSelect.style.display="none";update();}
+
+// Admin add VIP password
+async function addVipPassword(){if(prompt("Password admin")!=="davzstore") return toast("Password salah!");const pw=prompt("Masukkan password VIP baru:");if(!pw) return;await supabase.from('vip_passwords').upsert({password:pw,spins_allowed:3});toast("Password VIP berhasil ditambahkan: "+pw);}
+
+// Admin add gifts
+async function addGiftsToAll(amount=1){if(prompt("Password admin")!=="davzstore") return toast("Password salah!");await supabase.rpc('increment_all_spins',{inc:amount});toast("Semua akun mendapat "+amount+" kado!");}
 
 // Device listen global status
 supabase.from('global_status').on('UPDATE',payload=>{const status = payload.new;adminAbuse=status.admin_abuse;potionActive=status.potion_active && new Date() < new Date(status.potion_expire);update();}).subscribe();
