@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DHAFIZ777-GACHA PREMIUM</title>
+<style>
+body{margin:0;height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;font-family:Arial,sans-serif;color:#fff;background:radial-gradient(circle at top,#1b0033,#000);overflow:hidden;}
+h1{margin-bottom:6px;font-size:38px;text-shadow:0 0 25px #00ffe0;} 
+#limitText{margin-top:15px;font-size:16px;text-shadow:0 0 12px #00ffcc;}
+#gift{font-size:260px;cursor:pointer;user-select:none;margin-bottom:20px;transition:transform .3s;}
+#gift:hover{transform:scale(1.05);}
+#gift.disabled{opacity:.4;pointer-events:none;}
+.shake{animation:shake .5s infinite} 
+@keyframes shake{0%{transform:rotate(0)}25%{transform:rotate(3deg)}50%{transform:rotate(0)}75%{transform:rotate(-3deg);}}
+.controls{margin-top:10px} 
+button{padding:10px 18px;border-radius:20px;border:none;font-weight:bold;cursor:pointer;transition:.3s;}
+button:hover{filter:brightness(1.2);}
+.modeBtn{width:220px;height:48px;font-size:16px;border-radius:22px;cursor:pointer;}
+.modeFree{background:#00ff6a;color:#000;}
+.modePremium{background:#00ffe0;color:#000;}
+.admin{background:#111;color:#fff;border:2px solid #00ff6a}
+.admin.active{background:#ff5252;color:#000}
+.popup{position:fixed;inset:0;background:rgba(0,0,0,.85);backdrop-filter:blur(14px);display:none;justify-content:center;align-items:center;z-index:100;transition:.3s;opacity:0;}
+.popup.show{display:flex;opacity:1;}
+.popupBox{background:linear-gradient(135deg,#000,#111);padding:40px 55px;border-radius:28px;box-shadow:0 0 80px #00ffcc;text-align:center;transform:scale(0.8);transition:transform .3s;}
+.popup.show .popupBox{transform:scale(1);}
+.popupText{font-size:32px;font-weight:bold;margin-bottom:20px;text-shadow:0 0 15px #00ffe0;}
+input{margin-top:12px;padding:12px;width:100%;border-radius:14px;border:none;outline:none;font-size:16px;background:#111;color:#fff;text-align:center;}
+#submitName{margin-top:18px;background:#00ffe0;color:#000;width:50%;font-weight:bold;font-size:16px;}
+#toast{position:fixed;bottom:20px;background:#111;padding:10px 18px;border-radius:20px;opacity:0;transition:.3s;}
+#premiumTimer,#boostTimer,#potionCountdown{margin-top:6px;font-size:14px;color:#00ffe0;text-shadow:0 0 12px #00ffe0;}
+.secretSpecial {color:#1de9b6;text-shadow:0 0 10px #1de9b6,0 0 20px #1de9b6,0 0 30px #00ffdd;animation:secretPulse 1s infinite alternate;}
+.mythicSpecial {color:#ff5252;text-shadow:0 0 15px #ff5252,0 0 25px #ff0000;animation:secretPulse 1s infinite alternate;}
+@keyframes secretPulse{0%{transform:scale(1);}50%{transform:scale(1.3) rotate(10deg);}100%{transform:scale(1.2) rotate(-10deg);}}
+</style>
+</head>
+<body>
+<h1>🎁 DHAFIZ777-GACHA</h1>
+<div id="limitText"></div>
+<div id="premiumTimer"></div>
+<div id="boostTimer"></div>
+<div id="potionCountdown"></div>
+<div id="gift" onclick="prepareGift()">🎁</div>
+<div class="controls">
+ <button id="adminBtn" class="admin" onclick="toggleAdmin()">ADMIN ABUSE ❌</button>
+</div>
+
+<div id="popup" class="popup">
+ <div class="popupBox">
+  <div class="popupText" id="popupText">Harap Masukan Nama Discord Anda</div>
+  <input id="usernameInput" placeholder="Nama Discord">
+  <button id="submitName" onclick="submitUsername()">SUBMIT</button>
+ </div>
+</div>
+
+<div id="modeSelect">
+ <div class="popupBox" style="text-align:center;">
+  <h2>PROTECTION</h2>
+  <div style="font-size:14px;color:#00ffcc;margin-bottom:15px;">SECURE GACHA SYSTEM</div>
+  <button class="modeBtn modeFree" onclick="selectFree()">🆓 FREE MODE</button>
+  <br><br>
+  <input id="premiumKey" placeholder="Masukan key VIP/Premium">
+  <br><br>
+  <button class="modeBtn modePremium" onclick="selectPremium()">💎 PREMIUM MODE</button>
+ </div>
+</div>
+
+<div class="controls">
+ <button id="boostBtn" class="modePremium" onclick="startPotionAdmin()">🧪 POTION ADMIN</button>
+</div>
+
+<div id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+<script>
+// Fix "Supabase already declared" dengan window global
+if (!window.supabaseClient) {
+  window.supabaseClient = supabase.createClient(
+    "https://gacha-xyz.supabase.co",  
+    "sb_publishable_rBYeUnQhRrkGCM9OPq3jSA_nPL_zX5q"
+  );
+}
+var supabase = window.supabaseClient;
+
+const WEBHOOK="https://discord.com/api/webhooks/1450407026332270714/YUCosS--Bjud-m8oX_j84L8R44fGXHB_LHnf_0qAT48Pa99J_xbKDuDSwI83kLUlauit";
+
+const gift=document.getElementById("gift");
+const popup=document.getElementById("popup");
+const popupText=document.getElementById("popupText");
+const usernameInput=document.getElementById("usernameInput");
+const toastEl=document.getElementById("toast");
+const limitText=document.getElementById("limitText");
+const adminBtn=document.getElementById("adminBtn");
+const premiumTimer=document.getElementById("premiumTimer");
+const boostTimer=document.getElementById("boostTimer");
+const potionCountdown=document.getElementById("potionCountdown");
+const modeSelect=document.getElementById("modeSelect");
+const premiumKey=document.getElementById("premiumKey");
+const boostBtn=document.getElementById("boostBtn");
+
+let username=sessionStorage.getItem("username")||"";
+let mode=null,gachaLimit=0,adminAbuse=false,opening=false,lastSpin=0;
+let potionActive=false,potionExpire=0;
+let deviceId = localStorage.getItem("device_id");
+if(!deviceId){deviceId = crypto.randomUUID(); localStorage.setItem("device_id", deviceId);}
+
+// Rate tables
+const rateFree=[{n:"ZONK ⚫",c:"zonk",p:50},{n:"RARE 🔵",c:"rare",p:30},{n:"EPIC 🟣",c:"epic",p:15},{n:"LEGENDARY 🟡",c:"legendary",p:4},{n:"MYTHIC 🔴",c:"mythic",p:0.5},{n:"SECRET 🟢",c:"secret",p:0.5}];
+const ratePremium=[{n:"ZONK ⚫",c:"zonk",p:40},{n:"RARE 🔵",c:"rare",p:30},{n:"EPIC 🟣",c:"epic",p:15},{n:"LEGENDARY 🟡",c:"legendary",p:10},{n:"MYTHIC 🔴",c:"mythic",p:3},{n:"SECRET 🟢",c:"secret",p:2}];
+const rateAdmin=[{n:"ZONK ⚫",c:"zonk",p:20},{n:"RARE 🔵",c:"rare",p:20},{n:"EPIC 🟣",c:"epic",p:20},{n:"LEGENDARY 🟡",c:"legendary",p:15},{n:"MYTHIC 🔴",c:"mythic",p:10},{n:"SECRET 🟢",c:"secret",p:15}];
+
+// Toast
+function toast(msg){toastEl.textContent=msg;toastEl.style.opacity=1;setTimeout(()=>toastEl.style.opacity=0,1500);}
+function submitUsername(){let u=usernameInput.value.trim();if(!u)return toast("Masukkan nama dulu!");username=u; sessionStorage.setItem("username",username);popup.classList.remove("show");toast("Nama Discord tersimpan: "+username);}
+function prepareGift(){if(!username){popup.classList.add("show");return;} openGift();}
+
+// Roll function
+function roll(){let table=mode==="FREE"?rateFree:mode==="PREMIUM"?ratePremium:rateFree;if(adminAbuse) table=rateAdmin;if(potionActive){table=table.map(i=>i.c==="secret"||i.c==="mythic"?{...i,p:i.p*3}:i);let total=table.reduce((a,b)=>a+b.p,0);table=table.map(i=>({...i,p:(i.p/total)*100}));}let r=Math.random()*100,t=0;for(let i of table){t+=i.p;if(r<=t) return i;}}
+
+// Open gift
+async function openGift(){if(opening||gachaLimit<=0) return toast("Gacha habis");if(Date.now()-lastSpin<1200) return;lastSpin=Date.now();if(gachaLimit!==Infinity) gachaLimit--;update();gift.classList.add("shake");setTimeout(async()=>{gift.classList.remove("shake");const p=roll();popupText.className=p.n==="SECRET 🟢"?"popupText secretSpecial":p.n==="MYTHIC 🔴"?"popupText mythicSpecial":"popupText "+p.c;popupText.textContent=p.n;popup.classList.add("show");opening=false;sendDiscord(p.n,mode);await supabase.from('gacha_users').upsert({device_id:deviceId,username,password:mode,spins:gachaLimit},{onConflict:['device_id','password']});},1300);}
+
+// Admin Abuse
+async function toggleAdmin(){if(prompt("Password admin")!=="davzstore") return toast("Password salah!");const {data}=await supabase.from('global_status').select('*').single();const newStatus = !data.admin_abuse;await supabase.from('global_status').update({admin_abuse:newStatus, updated_at:new Date()});toast("Admin Abuse "+(newStatus?"ON":"OFF"));}
+
+// Potion Admin
+async function startPotionAdmin(){const {data}=await supabase.from('global_status').select('*').single();if(data.potion_active) return toast("Potion Admin sudah aktif!");let countdown=10;potionCountdown.textContent="Potion Admin mulai dalam: "+countdown+" detik";let timer=setInterval(async()=>{countdown--;if(countdown<=0){clearInterval(timer);const expireTime = new Date(Date.now() + 10*60*1000);await supabase.from('global_status').update({potion_active:true,potion_expire:expireTime});potionCountdown.textContent="Potion Admin aktif 10 menit!";toast("Potion Admin aktif 10 menit! Chance SECRET & MYTHIC meningkat!");fetch(WEBHOOK,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({embeds:[{title:"ADMIN EVENT TELAH DIMULAI",description:"Potion Admin aktif untuk semua user selama 10 menit!",color:0xff0000}]})});} else {potionCountdown.textContent="Potion Admin mulai dalam: "+countdown+" detik";}},1000);}
+
+// Send Discord
+function sendDiscord(result,modeType){const colorMap={"ZONK ⚫":0x777777,"RARE 🔵":0x03a9f4,"EPIC 🟣":0x9c27b0,"LEGENDARY 🟡":0xffeb3b,"MYTHIC 🔴":0xff5252,"SECRET 🟢":0x1de9b6};const title=(modeType==="FREE")?"🎁 FREE GACHA":"🎁 PREMIUM GACHA";fetch(WEBHOOK,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({embeds:[{title:title,description:username+" | "+result,color:colorMap[result]||0x00ff00}]})});}
+
+// Mode select
+function selectFree(){mode="FREE";gachaLimit=3;modeSelect.style.display="none";update();}
+function selectPremium(){const key=premiumKey.value.trim();if(key!=="davz1231" && key!=="davznew") return toast("Key salah");mode="PREMIUM";gachaLimit=key==="davz1231"?3:Infinity;modeSelect.style.display="none";update();}
+
+// Device listen global status
+supabase.from('global_status').on('UPDATE',payload=>{const status = payload.new;adminAbuse=status.admin_abuse;potionActive=status.potion_active && new Date() < new Date(status.potion_expire);update();}).subscribe();
+
+function update(){limitText.textContent=(mode||"MODE")+" | SISA GACHA: "+(gachaLimit===Infinity?"∞":gachaLimit);gift.classList.toggle("disabled",gachaLimit<=0 && gachaLimit!==Infinity);adminBtn.classList.toggle("active",adminAbuse);boostBtn.disabled=!adminAbuse;boostBtn.style.opacity=adminAbuse?1:0.4;}
+
+if(username) popup.classList.remove("show");
+update();
+</script>
+</body>
+</html>
